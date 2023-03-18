@@ -13,7 +13,7 @@ public class Tokenizer : ITokenizer
         }
 
         var unifiedFileContent = fileContent.ReplaceLineEndings("\n");
-        var tokens = Regex.Split(unifiedFileContent, @"(?<=[ |\n|\t])", RegexOptions.IgnorePatternWhitespace).ToList();
+        var tokens = Regex.Split(unifiedFileContent, @"(?<=[ |\n|\t])").ToList();
         SplitNewLineCharacters(tokens);
 
         return tokens.AsReadOnly();
