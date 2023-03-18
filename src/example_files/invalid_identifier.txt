@@ -1,0 +1,2 @@
+﻿foo _bar, // identyfikatory poprawne
+&baz, // identyfikator niepoprawny
