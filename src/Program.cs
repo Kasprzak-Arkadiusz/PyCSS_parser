@@ -1,4 +1,6 @@
-﻿using PyCSS_parser.Parser;
+﻿using PyCSS_parser.Common;
+using PyCSS_parser.Extensions;
+using PyCSS_parser.Parser;
 using PyCSS_parser.Tokenizer;
 using PyCSS_parser.Validators;
 
@@ -12,4 +14,13 @@ ITokenizer tokenizer = new Tokenizer();
 var tokens = tokenizer.TokenizeFile(fileContent);
 
 IParser parser = new Parser(tokens);
-parser.Parse();
+try
+{
+    parser.Parse();
+}
+catch (TokenNotDefinedException e)
+{
+    ConsoleWriter.WriteError(e.Message);
+}
+
+ConsoleWriter.WriteInformation("Pomyślnie zwalidowano plik wejściowy.");
