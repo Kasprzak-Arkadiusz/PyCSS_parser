@@ -1,12 +1,11 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace PyCSS_parser;
+namespace PyCSS_parser.Tokenizer;
 
 public class Tokenizer : ITokenizer
 {
-    public IReadOnlyList<string> TokenizeFile(string path)
+    public IReadOnlyList<string> TokenizeFile(string fileContent)
     {
-        var fileContent = File.ReadAllText(path);
         if (string.IsNullOrEmpty(fileContent))
         {
             return new List<string>().AsReadOnly();

@@ -1,4 +1,4 @@
-﻿namespace PyCSS_parser;
+﻿namespace PyCSS_parser.Tokenizer;
 
 public interface ITokenizer
 {
