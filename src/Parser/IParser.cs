@@ -2,5 +2,5 @@
 
 public interface IParser
 {
-    void Parse(IReadOnlyList<string> tokens);
+    void Parse();
 }

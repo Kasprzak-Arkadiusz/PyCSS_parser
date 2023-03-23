@@ -1,16 +1,43 @@
-﻿namespace PyCSS_parser.Parser;
+﻿using PyCSS_parser.Common;
+
+namespace PyCSS_parser.Parser;
 
 public class Parser : IParser
 {
+    private readonly IReadOnlyList<string> _tokens;
+    private int _lineNumber;
 
-    public void Parse(IReadOnlyList<string> tokens)
+    public Parser(IReadOnlyList<string> tokens)
     {
-        for (var i = 0; i < tokens.Count; i++)
+        _tokens = tokens;
+        _lineNumber = 1;
+    }
+
+    public void Parse()
+    {
+        foreach (var token in _tokens)
         {
-            if (tokens[i] == Tokens.NewLineCharacter)
+            if (token == Tokens.NewLineCharacter)
             {
-                continue;
+                _lineNumber++;
+            }
+            else if (token == Tokens.CommentBeginning)
+            {
+                ParseComment();
+            }
+            else if (Regexes.Identifier.Match(token).Success)
+            {
+                ParseClause();
+            }
+            else
+            {
+                throw new TokenNotDefinedException(
+                    $"Analizowany token nie został uwzględniony w gramatyce: {token}");
             }
         }
     }
+
+    private static void ParseComment() { }
+
+    private static void ParseClause() { }
 }

@@ -11,5 +11,5 @@ var fileContent = File.ReadAllText(args[0]);
 ITokenizer tokenizer = new Tokenizer();
 var tokens = tokenizer.TokenizeFile(fileContent);
 
-IParser parser = new Parser();
-parser.Parse(tokens);
+IParser parser = new Parser(tokens);
+parser.Parse();
