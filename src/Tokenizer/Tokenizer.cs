@@ -23,8 +23,14 @@ public class Tokenizer : ITokenizer
         for (var index = 0; index < tokens.Count; index++)
         {
             var token = tokens[index];
-            if (token.Length == 1 || token[^1] != '\n')
+            if (token.Length == 1)
             {
+                continue;
+            }
+
+            if (token[^1] != '\n')
+            {
+                tokens[index] = token.Trim();
                 continue;
             }
 

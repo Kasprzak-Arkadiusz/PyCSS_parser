@@ -3,5 +3,5 @@
 public static class Tokens
 {
     public const string NewLineCharacter = "\n";
-    public const string CommentBeginning = @"\\";
+    public const string CommentBeginning = "//";
 }

@@ -15,15 +15,16 @@ public class Parser : IParser
 
     public void Parse()
     {
-        foreach (var token in _tokens)
+        for (var i = 0; i < _tokens.Count; i++)
         {
+            var token = _tokens[i];
             if (token == Tokens.NewLineCharacter)
             {
                 _lineNumber++;
             }
             else if (token == Tokens.CommentBeginning)
             {
-                ParseComment();
+                i = ParseComment(i);
             }
             else if (Regexes.Identifier.Match(token).Success)
             {
@@ -37,7 +38,21 @@ public class Parser : IParser
         }
     }
 
-    private static void ParseComment() { }
+    private int ParseComment(int currentTokenIndex)
+    {
+        currentTokenIndex++;
+        while (currentTokenIndex < _tokens.Count)
+        {
+            if (_tokens[currentTokenIndex] == Tokens.NewLineCharacter)
+            {
+                return currentTokenIndex;
+            }
+
+            currentTokenIndex++;
+        }
+
+        return currentTokenIndex;
+    }
 
     private static void ParseClause() { }
 }
