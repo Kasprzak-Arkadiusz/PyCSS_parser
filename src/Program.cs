@@ -1,4 +1,5 @@
 ﻿using PyCSS_parser.Common;
+using PyCSS_parser.Common.Exceptions;
 using PyCSS_parser.Extensions;
 using PyCSS_parser.Parser;
 using PyCSS_parser.Tokenizer;
@@ -17,10 +18,13 @@ IParser parser = new Parser(tokens);
 try
 {
     parser.Parse();
+    ConsoleWriter.WriteInformation("Pomyślnie zwalidowano plik wejściowy.");
 }
-catch (TokenNotDefinedException e)
+catch (TokenNotDefinedException tokenNotDefined)
 {
-    ConsoleWriter.WriteError(e.Message);
+    ConsoleWriter.WriteError(tokenNotDefined.Message);
 }
-
-ConsoleWriter.WriteInformation("Pomyślnie zwalidowano plik wejściowy.");
+catch (InvalidTokenException invalidToken)
+{
+    ConsoleWriter.WriteError(invalidToken.Message);
+}

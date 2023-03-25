@@ -1,4 +1,5 @@
 ﻿using PyCSS_parser.Common;
+using PyCSS_parser.Common.Exceptions;
 
 namespace PyCSS_parser.Parser;
 
@@ -24,11 +25,13 @@ public class Parser : IParser
             }
             else if (token == Tokens.CommentBeginning)
             {
+                i++;
                 i = ParseComment(i);
             }
             else if (Regexes.Identifier.Match(token).Success)
             {
-                ParseClause();
+                i++;
+                i = ParseClause(i);
             }
             else
             {
@@ -40,11 +43,12 @@ public class Parser : IParser
 
     private int ParseComment(int currentTokenIndex)
     {
-        currentTokenIndex++;
-        while (currentTokenIndex < _tokens.Count)
+        while (currentTokenIndex < _tokens.Count - 1)
         {
             if (_tokens[currentTokenIndex] == Tokens.NewLineCharacter)
             {
+                _lineNumber++;
+                currentTokenIndex++;
                 return currentTokenIndex;
             }
 
@@ -54,5 +58,76 @@ public class Parser : IParser
         return currentTokenIndex;
     }
 
-    private static void ParseClause() { }
+    private int ParseClause(int currentTokenIndex)
+    {
+        currentTokenIndex = ParseClauseHeader(currentTokenIndex);
+        currentTokenIndex = ParseClauseBody(currentTokenIndex);
+        return currentTokenIndex;
+    }
+
+    private int ParseClauseHeader(int currentTokenIndex)
+    {
+        while (_tokens[currentTokenIndex] != Tokens.NewLineCharacter ||
+               _tokens[currentTokenIndex] != Tokens.CommentBeginning)
+        {
+            var isCombinator = Tokens.Combinators.Contains(_tokens[currentTokenIndex]);
+            if (isCombinator)
+            {
+                currentTokenIndex++;
+                switch (_tokens[currentTokenIndex])
+                {
+                    case Tokens.NewLineCharacter:
+                        currentTokenIndex++;
+                        _lineNumber++;
+                        break;
+                    case Tokens.CommentBeginning:
+                        currentTokenIndex++;
+                        currentTokenIndex = ParseComment(currentTokenIndex);
+                        break;
+                    default:
+                    {
+                        if (!Regexes.Identifier.Match(_tokens[currentTokenIndex]).Success)
+                        {
+                            throw new InvalidTokenException(_lineNumber,
+                                "Oczekiwany identyfikator zgodny z następującym wyrażeniem regularnym:\n" +
+                                Regexes.Identifier);
+                        }
+
+                        throw new InvalidTokenException(_lineNumber,
+                            "Oczekiwany kombinator ze zbioru:\n" +
+                            Tokens.Combinators);
+                    }
+                }
+            }
+
+            if (!Regexes.Identifier.Match(_tokens[currentTokenIndex]).Success)
+            {
+                throw new InvalidTokenException(_lineNumber,
+                    "Identyfikator powinien być zgodny z następującym wyrażeniem regularnym:\n" +
+                    Regexes.Identifier);
+            }
+
+            currentTokenIndex++;
+        }
+
+        if (_tokens[currentTokenIndex] != Tokens.CommentBeginning)
+        {
+            currentTokenIndex++;
+            return ParseComment(currentTokenIndex);
+        }
+
+        _lineNumber++;
+        currentTokenIndex++;
+        return currentTokenIndex;
+    }
+
+    private int ParseClauseBody(int currentTokenIndex)
+    {
+        return ParseExpression(currentTokenIndex);
+    }
+
+    private int ParseExpression(int currentTokenIndex)
+    {
+        return currentTokenIndex;
+    }
 }

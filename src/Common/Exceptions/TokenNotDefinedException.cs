@@ -1,4 +1,4 @@
-﻿namespace PyCSS_parser.Common;
+﻿namespace PyCSS_parser.Common.Exceptions;
 
 public class TokenNotDefinedException : Exception
 {
