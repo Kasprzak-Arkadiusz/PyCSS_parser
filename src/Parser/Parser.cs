@@ -83,19 +83,6 @@ public class Parser : IParser
                         currentTokenIndex++;
                         currentTokenIndex = ParseComment(currentTokenIndex);
                         break;
-                    default:
-                    {
-                        if (!Regexes.Identifier.Match(_tokens[currentTokenIndex]).Success)
-                        {
-                            throw new InvalidTokenException(_lineNumber,
-                                "Oczekiwany identyfikator zgodny z następującym wyrażeniem regularnym:\n" +
-                                Regexes.Identifier);
-                        }
-
-                        throw new InvalidTokenException(_lineNumber,
-                            "Oczekiwany kombinator ze zbioru:\n" +
-                            Tokens.Combinators);
-                    }
                 }
             }
 
@@ -112,7 +99,9 @@ public class Parser : IParser
         if (_tokens[currentTokenIndex] == Tokens.CommentBeginning)
         {
             currentTokenIndex++;
-            return ParseComment(currentTokenIndex);
+            currentTokenIndex = ParseComment(currentTokenIndex);
+            currentTokenIndex++;
+            return currentTokenIndex;
         }
 
         _lineNumber++;
@@ -140,6 +129,7 @@ public class Parser : IParser
             if (_tokens[currentTokenIndex] == Tokens.NewLineCharacter)
             {
                 currentTokenIndex++;
+                _lineNumber++;
             }
 
             if (_tokens[currentTokenIndex] != Tokens.NewLineCharacter)
@@ -147,7 +137,7 @@ public class Parser : IParser
                 continue;
             }
 
-            currentTokenIndex++;
+            _lineNumber++;
             return currentTokenIndex;
         }
 
@@ -175,13 +165,45 @@ public class Parser : IParser
         currentTokenIndex++;
 
         // expression_value
-        while (_tokens[currentTokenIndex] != Tokens.DeclarationEnding ||
+        while (_tokens[currentTokenIndex] != Tokens.DeclarationEnding &&
                _tokens[currentTokenIndex] != Tokens.NewLineCharacter)
         {
-            
+            if (_tokens[currentTokenIndex] == Tokens.Keyword)
+            {
+                currentTokenIndex++;
+            }
+            else if (Regexes.UnitValue.Match(_tokens[currentTokenIndex]).Success)
+            {
+                currentTokenIndex++;
+            }
+            else if (Regexes.ColorHexValue.Match(_tokens[currentTokenIndex]).Success)
+            {
+                currentTokenIndex++;
+            }
+            else if (Regexes.UrlValue.Match(_tokens[currentTokenIndex]).Success)
+            {
+                currentTokenIndex++;
+            }
+            else if (Regexes.StringValue.Match(_tokens[currentTokenIndex]).Success)
+            {
+                currentTokenIndex++;
+            }
+            else if (Regexes.TextValue.Match(_tokens[currentTokenIndex]).Success)
+            {
+                currentTokenIndex++;
+            }
+            else
+            {
+                throw new InvalidTokenException(_lineNumber,
+                    "Niepoprawna wartość wyrażenia. Wartość może być: \n" +
+                    "- słowem kluczowym (np. !important)\n" +
+                    "- liczbą z jednostką (np. 10rem lub 7in)\n" +
+                    "- kolorem zapisanym w formacie heksadecymalnym (np. #fff lub #a01212)\n" +
+                    "- adresem url (np. watch?v=Ct6BUPvE2sM\n" +
+                    "- napisem (np. \"see below\")\n" +
+                    "- tekstem (np. avoid)");
+            }
         }
-        // while
-        // switch
 
         return currentTokenIndex;
     }
