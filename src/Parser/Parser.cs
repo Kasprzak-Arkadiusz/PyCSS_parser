@@ -122,31 +122,33 @@ public class Parser : IParser
 
     private int ParseClauseBody(int currentTokenIndex)
     {
-        if (_tokens[currentTokenIndex] != Tokens.Indent)
+        while (currentTokenIndex < _tokens.Count - 1)
         {
-            throw new InvalidTokenException(_lineNumber,
-                "Brakujące wcięcie (tabulacja) w ciele wyrażenia");
-        }
-        
-        currentTokenIndex = ParseExpression(currentTokenIndex);
-
-        while (_tokens[currentTokenIndex] == Tokens.DeclarationEnding)
-        {
-            currentTokenIndex++;
-            
-            if (_tokens[currentTokenIndex] != Tokens.NewLineCharacter)
-            {
-                throw new InvalidTokenException(_lineNumber,
-                    "Wyrażenia powinny znajdować się w nowych liniach");
-            }
-            
             if (_tokens[currentTokenIndex] != Tokens.Indent)
             {
-                throw new InvalidTokenException(_lineNumber,
-                    "Brakujące wcięcie (tabulacja) w ciele wyrażenia");
+                throw new InvalidTokenException(_lineNumber, "Brakujące wcięcie (tabulacja) w ciele wyrażenia");
             }
-            
+
+            currentTokenIndex++;
             currentTokenIndex = ParseExpression(currentTokenIndex);
+
+            if (_tokens[currentTokenIndex] == Tokens.DeclarationEnding)
+            {
+                currentTokenIndex++;
+            }
+
+            if (_tokens[currentTokenIndex] == Tokens.NewLineCharacter)
+            {
+                currentTokenIndex++;
+            }
+
+            if (_tokens[currentTokenIndex] != Tokens.NewLineCharacter)
+            {
+                continue;
+            }
+
+            currentTokenIndex++;
+            return currentTokenIndex;
         }
 
         return currentTokenIndex;
@@ -154,6 +156,33 @@ public class Parser : IParser
 
     private int ParseExpression(int currentTokenIndex)
     {
+        // expression_label
+        if (!Regexes.ExpressionLabel.Match(_tokens[currentTokenIndex]).Success)
+        {
+            throw new InvalidTokenException(_lineNumber, "Niepoprawna etykieta wyrażenia");
+        }
+
+        currentTokenIndex++;
+
+        // : 
+        if (_tokens[currentTokenIndex] != Tokens.DeclarationLabelSeparator)
+        {
+            throw new InvalidTokenException(_lineNumber,
+                "Niepoprawny token oddzielający etykietę wyrażenia od wartości\n." +
+                $" Oczekiwany token to {Tokens.DeclarationLabelSeparator}");
+        }
+
+        currentTokenIndex++;
+
+        // expression_value
+        while (_tokens[currentTokenIndex] != Tokens.DeclarationEnding ||
+               _tokens[currentTokenIndex] != Tokens.NewLineCharacter)
+        {
+            
+        }
+        // while
+        // switch
+
         return currentTokenIndex;
     }
 }

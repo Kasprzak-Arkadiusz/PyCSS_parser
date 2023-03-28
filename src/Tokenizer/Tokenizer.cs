@@ -13,7 +13,7 @@ public class Tokenizer : ITokenizer
         }
 
         var unifiedFileContent = fileContent.ReplaceLineEndings(Tokens.NewLineCharacter);
-        unifiedFileContent = Regex.Replace(unifiedFileContent, @"(\S)?([\,\+\>\<\:])(\S)?", "$1 $2 $3");
+        unifiedFileContent = Regex.Replace(unifiedFileContent, @"(\S)?([\,\+\>\<\:\;])(\S)?", "$1 $2 $3");
         var tokens = Regex.Split(unifiedFileContent, @$" +|({Tokens.NewLineCharacter})|({Tokens.Indent})")
             .Where(s => s != string.Empty).ToList();
 
