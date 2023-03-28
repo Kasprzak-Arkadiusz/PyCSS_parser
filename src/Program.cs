@@ -1,5 +1,4 @@
-﻿using PyCSS_parser.Common;
-using PyCSS_parser.Common.Exceptions;
+﻿using PyCSS_parser.Common.Exceptions;
 using PyCSS_parser.Extensions;
 using PyCSS_parser.Parser;
 using PyCSS_parser.Tokenizer;
