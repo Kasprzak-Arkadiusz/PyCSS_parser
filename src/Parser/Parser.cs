@@ -48,7 +48,6 @@ public class Parser : IParser
             if (_tokens[currentTokenIndex] == Tokens.NewLineCharacter)
             {
                 _lineNumber++;
-                currentTokenIndex++;
                 return currentTokenIndex;
             }
 
@@ -67,7 +66,7 @@ public class Parser : IParser
 
     private int ParseClauseHeader(int currentTokenIndex)
     {
-        while (_tokens[currentTokenIndex] != Tokens.NewLineCharacter ||
+        while (_tokens[currentTokenIndex] != Tokens.NewLineCharacter &&
                _tokens[currentTokenIndex] != Tokens.CommentBeginning)
         {
             var isCombinator = Tokens.Combinators.Contains(_tokens[currentTokenIndex]);
@@ -110,7 +109,7 @@ public class Parser : IParser
             currentTokenIndex++;
         }
 
-        if (_tokens[currentTokenIndex] != Tokens.CommentBeginning)
+        if (_tokens[currentTokenIndex] == Tokens.CommentBeginning)
         {
             currentTokenIndex++;
             return ParseComment(currentTokenIndex);
@@ -123,7 +122,34 @@ public class Parser : IParser
 
     private int ParseClauseBody(int currentTokenIndex)
     {
-        return ParseExpression(currentTokenIndex);
+        if (_tokens[currentTokenIndex] != Tokens.Indent)
+        {
+            throw new InvalidTokenException(_lineNumber,
+                "Brakujące wcięcie (tabulacja) w ciele wyrażenia");
+        }
+        
+        currentTokenIndex = ParseExpression(currentTokenIndex);
+
+        while (_tokens[currentTokenIndex] == Tokens.DeclarationEnding)
+        {
+            currentTokenIndex++;
+            
+            if (_tokens[currentTokenIndex] != Tokens.NewLineCharacter)
+            {
+                throw new InvalidTokenException(_lineNumber,
+                    "Wyrażenia powinny znajdować się w nowych liniach");
+            }
+            
+            if (_tokens[currentTokenIndex] != Tokens.Indent)
+            {
+                throw new InvalidTokenException(_lineNumber,
+                    "Brakujące wcięcie (tabulacja) w ciele wyrażenia");
+            }
+            
+            currentTokenIndex = ParseExpression(currentTokenIndex);
+        }
+
+        return currentTokenIndex;
     }
 
     private int ParseExpression(int currentTokenIndex)
