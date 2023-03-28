@@ -17,6 +17,20 @@ public class Tokenizer : ITokenizer
         var tokens = Regex.Split(unifiedFileContent, @$" +|({Tokens.NewLineCharacter})|({Tokens.Indent})")
             .Where(s => s != string.Empty).ToList();
 
+        PadFileEnding(tokens);
         return tokens.AsReadOnly();
+    }
+
+    private static void PadFileEnding(List<string> tokens)
+    {
+        if (tokens[^1] != Tokens.NewLineCharacter)
+        {
+            tokens.Add(Tokens.NewLineCharacter);
+        }
+
+        if (tokens[^2] != Tokens.NewLineCharacter)
+        {
+            tokens.Add(Tokens.NewLineCharacter);
+        }
     }
 }
