@@ -10,5 +10,5 @@ public static class Regexes
     public static Regex ColorHexValue { get; } = new(@"^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$");
     public static Regex UrlValue { get; } = new(@"url\([\w|\?|\=]*\)");
     public static Regex StringValue { get; } = new(@"""[\w| *]*""");
-    public static Regex TextValue { get; } = new(@"\w+");
+    public static Regex TextValue { get; } = new(@"^[a-zA-Z]+$");
 }

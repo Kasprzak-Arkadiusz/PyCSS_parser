@@ -1,5 +1,7 @@
-﻿using PyCSS_parser.Common;
+﻿using System.Text;
+using PyCSS_parser.Common;
 using PyCSS_parser.Common.Exceptions;
+using static PyCSS_parser.Common.Tokens;
 
 namespace PyCSS_parser.Parser;
 
@@ -19,11 +21,11 @@ public class Parser : IParser
         for (var i = 0; i < _tokens.Count; i++)
         {
             var token = _tokens[i];
-            if (token == Tokens.NewLineCharacter)
+            if (token == NewLineCharacter)
             {
                 _lineNumber++;
             }
-            else if (token == Tokens.CommentBeginning)
+            else if (token == CommentBeginning)
             {
                 i++;
                 i = ParseComment(i);
@@ -35,8 +37,8 @@ public class Parser : IParser
             }
             else
             {
-                throw new TokenNotDefinedException(
-                    $"Analizowany token nie został uwzględniony w gramatyce: {token}");
+                throw new TokenNotDefinedException(FormatErrorMessage(i,
+                    $"Analizowany token nie został uwzględniony w gramatyce: \"{token}\"\n"));
             }
         }
     }
@@ -45,7 +47,7 @@ public class Parser : IParser
     {
         while (currentTokenIndex < _tokens.Count - 1)
         {
-            if (_tokens[currentTokenIndex] == Tokens.NewLineCharacter)
+            if (_tokens[currentTokenIndex] == NewLineCharacter)
             {
                 _lineNumber++;
                 return currentTokenIndex;
@@ -66,20 +68,20 @@ public class Parser : IParser
 
     private int ParseClauseHeader(int currentTokenIndex)
     {
-        while (_tokens[currentTokenIndex] != Tokens.NewLineCharacter &&
-               _tokens[currentTokenIndex] != Tokens.CommentBeginning)
+        while (_tokens[currentTokenIndex] != NewLineCharacter &&
+               _tokens[currentTokenIndex] != CommentBeginning)
         {
-            var isCombinator = Tokens.Combinators.Contains(_tokens[currentTokenIndex]);
+            var isCombinator = Combinators.Contains(_tokens[currentTokenIndex]);
             if (isCombinator)
             {
                 currentTokenIndex++;
                 switch (_tokens[currentTokenIndex])
                 {
-                    case Tokens.NewLineCharacter:
+                    case NewLineCharacter:
                         currentTokenIndex++;
                         _lineNumber++;
                         break;
-                    case Tokens.CommentBeginning:
+                    case CommentBeginning:
                         currentTokenIndex++;
                         currentTokenIndex = ParseComment(currentTokenIndex);
                         break;
@@ -88,15 +90,14 @@ public class Parser : IParser
 
             if (!Regexes.Identifier.Match(_tokens[currentTokenIndex]).Success)
             {
-                throw new InvalidTokenException(_lineNumber,
-                    "Identyfikator powinien być zgodny z następującym wyrażeniem regularnym:\n" +
-                    Regexes.Identifier);
+                throw new InvalidTokenException(FormatErrorMessage(currentTokenIndex,
+                    $"Identyfikator powinien być zgodny z następującym wyrażeniem regularnym:\n {Regexes.Identifier} \n"));
             }
 
             currentTokenIndex++;
         }
 
-        if (_tokens[currentTokenIndex] == Tokens.CommentBeginning)
+        if (_tokens[currentTokenIndex] == CommentBeginning)
         {
             currentTokenIndex++;
             currentTokenIndex = ParseComment(currentTokenIndex);
@@ -113,26 +114,33 @@ public class Parser : IParser
     {
         while (currentTokenIndex < _tokens.Count - 1)
         {
-            if (_tokens[currentTokenIndex] != Tokens.Indent)
+            if (_tokens[currentTokenIndex] != Indent)
             {
-                throw new InvalidTokenException(_lineNumber, "Brakujące wcięcie (tabulacja) w ciele wyrażenia");
+                throw new InvalidTokenException(FormatErrorMessage(currentTokenIndex,
+                    "Brakujące wcięcie (oczekiwana tabulacja) w ciele wyrażenia.\n"));
             }
 
             currentTokenIndex++;
             currentTokenIndex = ParseExpression(currentTokenIndex);
 
-            if (_tokens[currentTokenIndex] == Tokens.DeclarationEnding)
+            if (_tokens[currentTokenIndex] == DeclarationEnding)
             {
                 currentTokenIndex++;
             }
+            else if (_tokens[currentTokenIndex] == NewLineCharacter &&
+                     _tokens[currentTokenIndex + 1] != NewLineCharacter)
+            {
+                throw new InvalidTokenException(FormatErrorMessage(currentTokenIndex,
+                    "Wyrażenia muszą kończyć się średnikiem.\n"));
+            }
 
-            if (_tokens[currentTokenIndex] == Tokens.NewLineCharacter)
+            if (_tokens[currentTokenIndex] == NewLineCharacter)
             {
                 currentTokenIndex++;
                 _lineNumber++;
             }
 
-            if (_tokens[currentTokenIndex] != Tokens.NewLineCharacter)
+            if (_tokens[currentTokenIndex] != NewLineCharacter)
             {
                 continue;
             }
@@ -146,29 +154,26 @@ public class Parser : IParser
 
     private int ParseExpression(int currentTokenIndex)
     {
-        // expression_label
         if (!Regexes.ExpressionLabel.Match(_tokens[currentTokenIndex]).Success)
         {
-            throw new InvalidTokenException(_lineNumber, "Niepoprawna etykieta wyrażenia");
+            throw new InvalidTokenException(FormatErrorMessage(currentTokenIndex, "Niepoprawna etykieta wyrażenia.\n"));
         }
 
         currentTokenIndex++;
 
-        // : 
-        if (_tokens[currentTokenIndex] != Tokens.DeclarationLabelSeparator)
+        if (_tokens[currentTokenIndex] != DeclarationLabelSeparator)
         {
-            throw new InvalidTokenException(_lineNumber,
+            throw new InvalidTokenException(FormatErrorMessage(currentTokenIndex,
                 "Niepoprawny token oddzielający etykietę wyrażenia od wartości\n." +
-                $" Oczekiwany token to {Tokens.DeclarationLabelSeparator}");
+                $" Oczekiwany token to {DeclarationLabelSeparator}\n"));
         }
 
         currentTokenIndex++;
 
-        // expression_value
-        while (_tokens[currentTokenIndex] != Tokens.DeclarationEnding &&
-               _tokens[currentTokenIndex] != Tokens.NewLineCharacter)
+        while (_tokens[currentTokenIndex] != DeclarationEnding &&
+               _tokens[currentTokenIndex] != NewLineCharacter)
         {
-            if (_tokens[currentTokenIndex] == Tokens.Keyword)
+            if (_tokens[currentTokenIndex] == Keyword)
             {
                 currentTokenIndex++;
             }
@@ -192,19 +197,58 @@ public class Parser : IParser
             {
                 currentTokenIndex++;
             }
+            else if (_tokens[currentTokenIndex] == CommentBeginning)
+            {
+                currentTokenIndex = ParseComment(currentTokenIndex);
+            }
             else
             {
-                throw new InvalidTokenException(_lineNumber,
+                throw new InvalidTokenException(FormatErrorMessage(currentTokenIndex,
                     "Niepoprawna wartość wyrażenia. Wartość może być: \n" +
-                    "- słowem kluczowym (np. !important)\n" +
+                    "- słowem kluczowym !important\n" +
                     "- liczbą z jednostką (np. 10rem lub 7in)\n" +
                     "- kolorem zapisanym w formacie heksadecymalnym (np. #fff lub #a01212)\n" +
-                    "- adresem url (np. watch?v=Ct6BUPvE2sM\n" +
+                    "- adresem url (np. watch?v=Ct6BUPvE2sM)\n" +
                     "- napisem (np. \"see below\")\n" +
-                    "- tekstem (np. avoid)");
+                    "- tekstem (np. avoid)\n"
+                ));
             }
         }
 
         return currentTokenIndex;
+    }
+
+    private string FormatErrorMessage(int currentTokenIndex, string errorMessage)
+    {
+        var searchForwardIndex = currentTokenIndex;
+        while (searchForwardIndex < _tokens.Count && _tokens[searchForwardIndex] != NewLineCharacter)
+        {
+            searchForwardIndex++;
+        }
+
+        var searchBackwardIndex = currentTokenIndex == 0 ? 0 : currentTokenIndex;
+        while (searchBackwardIndex > 0 && _tokens[searchBackwardIndex] != NewLineCharacter)
+        {
+            searchBackwardIndex--;
+        }
+
+        var currentLineTokens = _tokens.Take(searchBackwardIndex..searchForwardIndex).ToList();
+        var numberOfSpaces = _tokens.Take((searchBackwardIndex + 1)..currentTokenIndex)
+            .Select(s => s == "\t" ? 8 : s.Length)
+            .Sum();
+
+        var stringBuilder = new StringBuilder();
+        stringBuilder.Append($"Linia nr.{_lineNumber}: ");
+        stringBuilder.AppendJoin(" ", currentLineTokens);
+
+        stringBuilder.Append('\n');
+        stringBuilder.Append(' ', numberOfSpaces);
+        var currentTokenLength = _tokens[currentTokenIndex] == "\t" ? 8 : _tokens[currentTokenIndex].Length;
+        stringBuilder.Append('^', currentTokenLength);
+
+        stringBuilder.Append('\n');
+        stringBuilder.Append(errorMessage);
+
+        return stringBuilder.ToString();
     }
 }
