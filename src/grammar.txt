@@ -1,0 +1,30 @@
+﻿program         			-> clause program | comment program | "\n" program | "\n"
+comment         			-> "//" input_token* "\n"
+input_token     			-> ~"\n"
+			
+clause          			-> clause_header clause_body
+clause_header   			-> selector
+selector        			-> identifier nex_selector
+next_selector   			-> combinator selector | Ɛ
+combinator					-> "+" | ">" | "<" | "," | ":" | Ɛ
+identifier					-> ^[:]?[a-zA-Z\*\#_\.][0-9a-zA-Z\*\#_\.]*$
+
+clause_body					-> expression next_expression clause_ending
+clause_ending				-> ";" "\n" | "\n"
+			
+next_expression				-> ";" expression_ending expression next_expression | Ɛ
+expression_ending 		    -> "\n" | comment
+		
+expression					-> "\t" expression_label ":" expression_value expression_comment
+expression_label			-> ^[a-z]+(?:[-]?[a-z])+$
+expression_value			-> (string_value | color_value | text_value | url_value | keyword_value
+                                | unit_value | number_value) next_expression_value
+expression_comment		    -> comment | Ɛ
+next_expression_value       -> expression_value | Ɛ
+
+string_value 				-> "[\w| *]*"
+color_value					-> ^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$
+url_value					-> url\([\w|\?|\=]*\)
+keyword_value				-> "!important"
+unit_value					-> [0-9][.]?[0-9]+(?:px|rem|em|cm|mm|in|pt|pc|ch|vw|vh|vmin|vmax|%)
+number_value                -> [1-9][0-9]*
