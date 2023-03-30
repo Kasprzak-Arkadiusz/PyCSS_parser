@@ -11,4 +11,5 @@ public static class Regexes
     public static Regex UrlValue { get; } = new(@"url\([\w|\?|\=]*\)");
     public static Regex StringValue { get; } = new(@"""[\w| *]*""");
     public static Regex TextValue { get; } = new(@"^[a-zA-Z]+$");
+    public static Regex NumberValue { get; } = new(@"[1-9][0-9]*");
 }

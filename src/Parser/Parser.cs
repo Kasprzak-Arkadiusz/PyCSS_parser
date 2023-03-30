@@ -90,6 +90,7 @@ public class Parser : IParser
 
             if (!Regexes.Identifier.Match(_tokens[currentTokenIndex]).Success)
             {
+                currentTokenIndex++;
                 throw new InvalidTokenException(FormatErrorMessage(currentTokenIndex,
                     $"Identyfikator powinien być zgodny z następującym wyrażeniem regularnym:\n {Regexes.Identifier} \n"));
             }
@@ -124,13 +125,13 @@ public class Parser : IParser
             currentTokenIndex = ParseExpression(currentTokenIndex);
 
             if (_tokens[currentTokenIndex] == DeclarationEnding)
-            {
+            { 
                 currentTokenIndex++;
             }
             else if (_tokens[currentTokenIndex] == NewLineCharacter &&
                      _tokens[currentTokenIndex + 1] != NewLineCharacter)
             {
-                throw new InvalidTokenException(FormatErrorMessage(currentTokenIndex,
+                throw new InvalidTokenException(FormatErrorMessage(currentTokenIndex - 1,
                     "Wyrażenia muszą kończyć się średnikiem.\n"));
             }
 
@@ -197,6 +198,10 @@ public class Parser : IParser
             {
                 currentTokenIndex++;
             }
+            else if (Regexes.NumberValue.Match(_tokens[currentTokenIndex]).Success)
+            {
+                currentTokenIndex++;
+            }
             else if (_tokens[currentTokenIndex] == CommentBeginning)
             {
                 currentTokenIndex = ParseComment(currentTokenIndex);
@@ -206,7 +211,8 @@ public class Parser : IParser
                 throw new InvalidTokenException(FormatErrorMessage(currentTokenIndex,
                     "Niepoprawna wartość wyrażenia. Wartość może być: \n" +
                     "- słowem kluczowym !important\n" +
-                    "- liczbą z jednostką (np. 10rem lub 7in)\n" +
+                    "- liczbą z jednostką (np. 10rem lub 7.5in)\n" +
+                    "- liczbą całkowitą\n" +
                     "- kolorem zapisanym w formacie heksadecymalnym (np. #fff lub #a01212)\n" +
                     "- adresem url (np. watch?v=Ct6BUPvE2sM)\n" +
                     "- napisem (np. \"see below\")\n" +
@@ -237,12 +243,15 @@ public class Parser : IParser
             .Select(s => s == "\t" ? 8 : s.Length)
             .Sum();
 
+        var numberOfSeparators = _tokens.Take(searchBackwardIndex..currentTokenIndex)
+            .Count(s => s != "\t" && s != "\n");
+
         var stringBuilder = new StringBuilder();
-        stringBuilder.Append($"Linia nr.{_lineNumber}: ");
+        stringBuilder.Append($"Linia nr.{_lineNumber}: \n");
         stringBuilder.AppendJoin(" ", currentLineTokens);
 
         stringBuilder.Append('\n');
-        stringBuilder.Append(' ', numberOfSpaces);
+        stringBuilder.Append(' ', numberOfSpaces + numberOfSeparators);
         var currentTokenLength = _tokens[currentTokenIndex] == "\t" ? 8 : _tokens[currentTokenIndex].Length;
         stringBuilder.Append('^', currentTokenLength);
 
